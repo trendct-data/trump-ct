@@ -1,0 +1,28 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1469135318273.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "29C58059",
+    "lastKnownWriteTime" : 0,
+    "last_content_update" : 1469135318273,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "c4wr8mxxz4",
+        "caption" : "p2008",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=p2008&cache_key=c4wr8mxxz4",
+        "displayedObservations" : 169,
+        "environment" : "",
+        "object" : "p2008",
+        "totalObservations" : 169,
+        "variables" : 3
+    },
+    "relative_order" : 12,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

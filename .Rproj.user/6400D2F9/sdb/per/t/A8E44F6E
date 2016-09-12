@@ -1,0 +1,28 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1469130408374.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "A8E44F6E",
+    "lastKnownWriteTime" : 0,
+    "last_content_update" : 1469130408374,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "5ihamyq8qd",
+        "caption" : "voters_map",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=voters_map&cache_key=5ihamyq8qd",
+        "displayedObservations" : 15366,
+        "environment" : "",
+        "object" : "voters_map",
+        "totalObservations" : 15366,
+        "variables" : 10
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

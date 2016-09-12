@@ -1,0 +1,28 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1469196030923.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "272DA9A2",
+    "lastKnownWriteTime" : 4317645072,
+    "last_content_update" : 1469196030923,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "dxjb8r8x01",
+        "caption" : "vars2014",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=vars2014&cache_key=dxjb8r8x01",
+        "displayedObservations" : 45223,
+        "environment" : "",
+        "object" : "vars2014",
+        "totalObservations" : 45223,
+        "variables" : 5
+    },
+    "relative_order" : 13,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

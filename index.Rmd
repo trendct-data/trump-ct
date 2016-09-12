@@ -1,0 +1,449 @@
+---
+title: "What it would take for Trump to win Connecticut"
+author: "Andrew Ba Tran"
+date: "July 21, 2016"
+output: html_document
+---
+
+Donald Trump's campaign is under the impression that a majority of Connecticut could be persuaded to vote for him as President in November's general election.
+
+Based on a state poll last month from Quinnipiac University, 45 percent of voters would choose Clinton compared to 38 percent for Trump. That single digit lead coupled with Governor Dannel Malloy's low approval rating based on another Quinnipiac poll leads many to believe there is an opportunity for Trump.
+
+"It’s in play because the citizens of Connecticut are tired of the same things the people of the country, the United States, are tired of, which is bad leadership." said Paul Manafort, Trump's campaign manager and New Britain native, during a breakfast for the state's delegation at the Republican National Convention on Tuesday.
+
+## President-Elect Donald Trump
+
+What would it take for Trump to win in Connecticut? 
+
+Trend CT sought to envision scenarios based on voting patterns and demographics. Consider this a thought exercise.
+
+## If Bernie voters switched to Trump
+
+This year's presidential primaries saw a [historic turn out](http://trendct.org/2016/06/07/official-numbers-show-historic-turnout-for-ct-presidential-primaries/) among Republicans.
+
+Nearly half of all registered Republicans in Connecticut participated in the primary election. The next-highest participation rate was 43 percent in 1980, when President Ronald Reagan ran.
+
+In all, that's about 213,000 Republican primary voters— of which 123,000 voted for Trump.
+
+**Thought exercise: Let's assume that the general election was limited to voters who participated in the primary election**
+
+Based on raw primary votes, Trump would have won 99 towns in Connecticut while Clinton would have won just 70. 
+
+```{r libraries, warning=F, message=F, echo=F}
+library(dplyr)
+library(tidyr)
+library(scales)
+
+library(ggplot2)
+library(ggalt)
+
+library(stringr)
+library(knitr)
+library(rgdal)
+require(maptools)
+library(extrafont)
+```
+
+```{r working_the_data}
+
+## Republicans
+
+rep_results <- read.csv("data/RepublicanPresidentialPreferencePrimary.csv", stringsAsFactors=FALSE)
+rep_results <- rep_results %>%
+  group_by(Town.Name, Candidate.Name) %>%
+  summarise(votes=sum(Vote.Totals))
+
+rep_results$Candidate.Name <- gsub("Donald J. Trump", "trump_count", rep_results$Candidate.Name)
+rep_results$Candidate.Name <- gsub("John R. Kasich", "kasich_count", rep_results$Candidate.Name)
+rep_results$Candidate.Name <- gsub("Ben Carson", "others_count", rep_results$Candidate.Name)
+rep_results$Candidate.Name <- gsub("Ted Cruz", "others_count", rep_results$Candidate.Name)
+rep_results$Candidate.Name <- gsub("Uncommitted", "others_count", rep_results$Candidate.Name)
+
+rep_results <- rep_results %>%
+  group_by(Town.Name, Candidate.Name) %>%
+  summarise(votes=sum(votes)) %>%
+  spread(Candidate.Name, votes)
+
+rep_results$vote_diff <- rep_results$trump_count - rep_results$kasich_count
+rep_results$total <- rep_results$trump_count + rep_results$kasich_count + rep_results$others_count
+rep_results$trump_per <- round(rep_results$trump_count/rep_results$total*100,1)
+rep_results$kasich_per <- round(rep_results$kasich_count/rep_results$total*100,1)
+rep_results$others_per <- round(rep_results$others_count/rep_results$total*100,1)
+rep_results$percent_diff <- rep_results$trump_per - rep_results$kasich_per
+names(rep_results)[names(rep_results) == 'Town.Name'] <- 'Town'
+rep_results <- data.frame(rep_results)
+
+## Democrats
+
+dem_results_sos <- read.csv("data/DemocraticPresidentialPreferencePrimary.csv", stringsAsFactors=FALSE)
+dem_results_sos <- dem_results_sos %>%
+  group_by(Town.Name, Candidate.Name) %>%
+  summarise(votes=sum(Vote.Totals))
+
+dem_results_sos$Candidate.Name <- gsub("Bernie Sanders", "sanders_count", dem_results_sos$Candidate.Name)
+dem_results_sos$Candidate.Name <- gsub("Hillary Clinton", "clinton_count", dem_results_sos$Candidate.Name)
+dem_results_sos$Candidate.Name <- gsub("Roque Rocky De La Fuente", "others_count", dem_results_sos$Candidate.Name)
+dem_results_sos$Candidate.Name <- gsub("Uncommitted", "others_count", dem_results_sos$Candidate.Name)
+
+dem_results_sos <- dem_results_sos %>%
+  group_by(Town.Name, Candidate.Name) %>%
+  summarise(votes=sum(votes)) %>%
+  spread(Candidate.Name, votes)
+
+dem_results_sos$vote_diff <- dem_results_sos$clinton_count - dem_results_sos$sanders_count
+dem_results_sos$total <- dem_results_sos$clinton_count + dem_results_sos$sanders_count + dem_results_sos$others_count
+dem_results_sos$clinton_per <- round(dem_results_sos$clinton_count/dem_results_sos$total*100,1)
+dem_results_sos$sanders_per <- round(dem_results_sos$sanders_count/dem_results_sos$total*100,1)
+dem_results_sos$others_per <- round(dem_results_sos$others_count/dem_results_sos$total*100,1)
+dem_results_sos$percent_diff <- dem_results_sos$clinton_per - dem_results_sos$sanders_per
+
+names(dem_results_sos)[names(dem_results_sos) == 'Town.Name'] <- 'Town'
+dem_results <- dem_results_sos
+
+
+clinton <- dem_results[c("Town", "clinton_count", "sanders_count")]
+trump <- rep_results[c("Town", "trump_count", "total")]
+
+clinton_trump <- left_join(clinton, trump)
+clinton_trump$ct <- ifelse(clinton_trump$trump_count > clinton_trump$clinton_count, "trump", "clinton")
+```
+
+```{r map, fig.width=9, fig.height=6}
+
+town_shape <- readOGR(dsn="maps", layer="ctgeo")
+town_shape_df <- fortify(town_shape, region="NAME10")
+
+town_map <- clinton_trump
+town_map <- town_map[c("Town",  "trump_count", "clinton_count", "ct")]
+
+colnames(town_map) <- c("id", "Clinton", "Trump", "Winner")
+town_map$Winner <- gsub("trump", "Trump", town_map$Winner)
+town_map$Winner <- gsub("clinton", "Clinton", town_map$Winner)
+
+voters_map <- left_join(town_shape_df, town_map)
+
+
+
+# plot map
+gg <- ggplot(voters_map, aes(long,lat, group=group, fill=Winner)) + 
+  geom_polygon() + 
+  geom_path(color = "white") +
+  coord_equal() 
+gg <- gg + labs(x=NULL, y=NULL, title="Trump versus Clinton votes in the primaries",
+                subtitle="Based on raw primary votes, Trump would have won 99 towns in Connecticut while Clinton would have won just 70.",
+                caption="SOURCE: Office of the Secretary of State\nAndrew Ba Tran/TrendCT.org")
+gg <- gg + theme_bw(base_family="Calibri")
+gg <- gg + theme(text = element_text(size=16))
+gg <- gg + theme(panel.grid.major=element_blank())
+gg <- gg + theme(panel.grid.minor=element_blank())
+gg <- gg + theme(panel.border=element_blank())
+gg <- gg + theme(axis.ticks=element_blank())
+gg <- gg + theme(axis.text.x=element_blank())
+gg <- gg + theme(axis.text.y=element_blank())
+
+gg <- gg + theme(plot.title=element_text(face="bold", family="Lato Black", size=22))
+gg <- gg + theme(plot.subtitle=element_text(face="italic", size=9, margin=margin(b=12)))
+gg <- gg + theme(plot.caption=element_text(size=12, margin=margin(t=10, r=80), color="#7a7d7e"))
+gg <- gg + theme(plot.margin = unit(c(1, 1, 1, 1), "lines"))
+
+gg
+```
+
+But those towns are the most-populous ones because Clinton received 170,000 votes in the Democratic primary— almost 50,000 more than Trump.
+
+So based on primary votes, what would it take for Trump to beat Clinton?
+
+A couple things: If all Republican primary voters (213,000) voted for Trump or if all voters who chose Bernie Sanders picked Trump, his votes would be boosted to 276,000. 
+
+
+```{r map_test1, fig.width=9, fig.height=6}
+
+town_map <- clinton_trump
+town_map$ct <- ifelse(town_map$total > town_map$clinton_count, "Trump", "Clinton")
+
+town_map <- town_map[c("Town",  "trump_count", "clinton_count", "ct")]
+
+colnames(town_map) <- c("id", "Clinton", "Trump", "Winner")
+town_map$Winner <- gsub("trump", "Trump", town_map$Winner)
+town_map$Winner <- gsub("clinton", "Clinton", town_map$Winner)
+
+voters_map <- left_join(town_shape_df, town_map)
+
+
+
+# plot map
+gg <- ggplot(voters_map, aes(long,lat, group=group, fill=Winner)) + 
+  geom_polygon() + 
+  geom_path(color = "white") +
+  coord_equal() 
+gg <- gg + labs(x=NULL, y=NULL, title="Republican votes compared to Clinton votes in the primaries",
+                subtitle="If all participating registered Republicans voted for Trump in the primaries.",
+                caption="SOURCE: Office of the Secretary of State\nAndrew Ba Tran/TrendCT.org")
+gg <- gg + theme_bw(base_family="Calibri")
+gg <- gg + theme(text = element_text(size=16))
+gg <- gg + theme(panel.grid.major=element_blank())
+gg <- gg + theme(panel.grid.minor=element_blank())
+gg <- gg + theme(panel.border=element_blank())
+gg <- gg + theme(axis.ticks=element_blank())
+gg <- gg + theme(axis.text.x=element_blank())
+gg <- gg + theme(axis.text.y=element_blank())
+
+gg <- gg + theme(plot.title=element_text(face="bold", family="Lato Black", size=22))
+gg <- gg + theme(plot.subtitle=element_text(face="italic", size=9, margin=margin(b=12)))
+gg <- gg + theme(plot.caption=element_text(size=12, margin=margin(t=10, r=80), color="#7a7d7e"))
+gg <- gg + theme(plot.margin = unit(c(1, 1, 1, 1), "lines"))
+
+gg
+
+```
+
+
+
+```{r map_test2, fig.width=9, fig.height=6}
+
+
+town_map <- clinton_trump
+town_map$total <- town_map$sanders_count + town_map$trump_count
+town_map$ct <- ifelse(town_map$total > town_map$clinton_count, "Trump", "Clinton")
+
+town_map <- town_map[c("Town",  "trump_count", "clinton_count", "ct")]
+
+colnames(town_map) <- c("id", "Clinton", "Trump", "Winner")
+town_map$Winner <- gsub("trump", "Trump", town_map$Winner)
+town_map$Winner <- gsub("clinton", "Clinton", town_map$Winner)
+
+voters_map <- left_join(town_shape_df, town_map)
+
+
+
+# plot map
+gg <- ggplot(voters_map, aes(long,lat, group=group, fill=Winner)) + 
+  geom_polygon() + 
+  geom_path(color = "white") +
+  coord_equal() 
+gg <- gg + labs(x=NULL, y=NULL, title="Trump (and Sanders) versus Clinton votes in the primaries",
+                subtitle="If all Bernie Sanders voters switched to Trump",
+                caption="SOURCE: Office of the Secretary of State\nAndrew Ba Tran/TrendCT.org")
+gg <- gg + theme_bw(base_family="Calibri")
+gg <- gg + theme(text = element_text(size=16))
+gg <- gg + theme(panel.grid.major=element_blank())
+gg <- gg + theme(panel.grid.minor=element_blank())
+gg <- gg + theme(panel.border=element_blank())
+gg <- gg + theme(axis.ticks=element_blank())
+gg <- gg + theme(axis.text.x=element_blank())
+gg <- gg + theme(axis.text.y=element_blank())
+
+gg <- gg + theme(plot.title=element_text(face="bold", family="Lato Black", size=22))
+gg <- gg + theme(plot.subtitle=element_text(face="italic", size=9, margin=margin(b=12)))
+gg <- gg + theme(plot.caption=element_text(size=12, margin=margin(t=10, r=80), color="#7a7d7e"))
+gg <- gg + theme(plot.margin = unit(c(1, 1, 1, 1), "lines"))
+
+gg
+```
+
+## If unaffiliated voters went to Trump
+
+But that would never be the case. 
+
+Plus, primary election participation pales in comparison to general election participation.
+
+About 1.6 million votes were cast in Connecticut during the presidential election between Barack Obama and John McCain. That's nearly 3 times the number of votes in this previous primary election.
+
+Also, primaries in Connecticut are limited to those registered to parties, which excludes a huge number of voters.
+
+There are about 803,000 voters registered as unaffiliated. 
+
+That's more than the 730,000 registered as Democrats and 426,000 registered as Republicans.
+
+If Trump could reach those large numbers of unaffiliated voters to make up for the Democrats outnumbering the Republicans in Connecticut, he's got a shot. Just 38 percent of the unaffiliated voters would make up the the difference between the number of registered Democrats and Republicans.
+
+```{r calculating_registered}
+regis <- read.csv("data/ACT_VOTER_TOWN_PRTY_072116.csv")
+
+regis_percent <- regis %>%
+  group_by(Town) %>%
+  mutate(Percent=round(Registered/sum(Registered)*100, 2))
+
+regis_percent_un <- regis_percent %>%
+  filter(Party=="Unaffiliated")
+```
+
+```{r unaffiliated_map, fig.width=9, fig.height=6}
+
+
+town_map <- regis_percent_un
+
+colnames(town_map) <- c("id",  "party", "Total", "Percent")
+
+voters_map <- left_join(town_shape_df, town_map)
+
+
+gg <- ggplot() +
+  geom_polygon(data = voters_map, aes(x=long, y=lat, group=group, fill=Percent), color = "black", size=0.2) +
+  coord_map() +
+  scale_fill_distiller(type="seq", trans="reverse", palette = "Purple", breaks=pretty_breaks(n=10))
+gg <- gg + labs(x=NULL, y=NULL, title="Where the unaffiliated voters are",
+                subtitle="As of July 21, 2016.",
+                caption="SOURCE: Office of the Secretary of State\nAndrew Ba Tran/TrendCT.org")
+gg <- gg + theme_bw(base_family="Calibri")
+gg <- gg + theme(text = element_text(size=16))
+gg <- gg + theme(panel.grid.major=element_blank())
+gg <- gg + theme(panel.grid.minor=element_blank())
+gg <- gg + theme(panel.border=element_blank())
+gg <- gg + theme(axis.ticks=element_blank())
+gg <- gg + theme(axis.text.x=element_blank())
+gg <- gg + theme(axis.text.y=element_blank())
+
+gg <- gg + theme(plot.title=element_text(face="bold", family="Lato Black", size=22))
+gg <- gg + theme(plot.subtitle=element_text(face="italic", size=9, margin=margin(b=12)))
+gg <- gg + theme(plot.caption=element_text(size=12, margin=margin(t=10, r=80), color="#7a7d7e"))
+gg <- gg + theme(plot.margin = unit(c(1, 1, 1, 1), "lines"))
+
+gg
+
+```
+
+
+```{r census_analysis}
+source("keys.R")
+#install.packages("devtools")
+#devtools::install_github("hrecht/censusapi")
+library("censusapi")
+
+
+
+# apis <- listCensusApis()
+# View(apis)
+# geos2014 <- listCensusMetadata(name="acs5", vintage=2014, "g")
+# View(geos2014)
+# # tracts = 140
+# vars2014 <- listCensusMetadata(name="acs5", vintage=2014, "v")
+# View(vars2014)
+
+geos2014 <- listCensusMetadata(name="acs5", vintage=2014, "g")
+View(geos2014)
+#B23025
+#B23025. Employment Status for the Population 16 Years and Over
+#B23025_001E Total
+#B23025_002E In labor force
+#B23025_005E In labor force:!!Civilian labor force:!!Unemployed
+
+unemployment_towns <- getCensus(name="acs5",
+    vintage=2014,
+    key=census_key,
+    vars=c("NAME", "B23025_001E", "B23025_002E", "B23025_005E" ),
+    region="county subdivision:*", regionin="state:09")
+
+
+# race_tracts <- getCensus(name="acs5", 
+#     vintage=2014,
+#     key=census_key, 
+#     vars=c("NAME", "B02001_001E", "B02001_002E", "B02001_003E", "B03001_001E"), 
+#     region="tract:*", regionin="state:09")
+# 
+
+```
+[Scatterplot of unemployment percent to percent of unaffiliated voters]
+[Scatterplot of unemployment percent to Clinton win percent?]
+
+In towns with high unemployment rates, ....
+In towns with low minority population...
+
+## Based on polling...
+
+According to the latest Quinnipiac poll, Clinton is leading Trump but only by a single digit. That's smaller than expected for a state like Connecticut, according to researchers. Plus, her negative favorability rating is almost at the same level as Trump's.
+
+[TABLE]
+
+**Thought exercise: Let's take these numbers at face value and apply them to registered voters and assume that all who have registered will vote**
+
+If we take the 9 percent of Republicans polled who said they would vote for Clinton and applied that to the number of registered Republican voters, that would be about 38,000 voters. Plus 85 percent of registered Democrats as well as 36 percent of unregistered equals; Clinton would have more than 950,000 votes.
+
+Trump, meanwhile, would end up with just 702,000 if we assume 79 percent of registered Republicans, 5 percent of democrats, and 41 percent of independents voted for him.
+
+Even with Libertarian candidate Gary Johnson and Green party candidate Jill Stein in the mix, Clinton would still theoretically have 870,000 votes to Trump's 670,000. 
+
+## If women stayed home
+
+Trump has support from more men than women—— 55 percent compared to 35 percent. 
+
+So if female voters were excluded from the voting population, Trump could be elcted.
+
+## If minorities did not vote
+
+Clinton has an overwhelming 70 percent support rate according to the poll. 
+
+Among whites who were polled, 44 percent were for Trump, ahead of 39 percent for Clinton.
+
+## Especially if Hispanics did not vote
+
+Connecticut ranks 10th among states of eligible Hispanic voters at 10.8 percent of the population. It's one of 16 states where more than half of the Hispanic population is eligble to vote.
+
+The Republican nominee for President has alienated many Hispanic voters with promises to build a wall along the southern border and attacking a judge with Mexican heritage.
+
+According to a recent poll from the [Latino Victory Fund/Latino Decisions/Fusion](http://thehill.com/blogs/ballot-box/presidential-races/288413-poll-most-hispanics-see-trump-unfavorably) poll, 79 percent of Hispanic voters view Trump negatively.
+
+However, minorities only make up less than 20 percent of the state population.
+
+Will there be enough white voters choosing Trump to make up for the minorities who will vote for Clinton?
+
+## If he has a time machine
+
+Connecticut had a streak of voting for Republican candidates for President starting in 1972 through 1988, with the election of George Bush and Dan Quayle. 
+
+Then in 1992, Connecticut flipped to a Clinton, Bill. The state has voted for a Democratic presidential candidate each general election since.
+
+[CHART TIMELINE OR TABLE]
+
+## If part of the state collapses into the ocean
+
+These are the towns that voted for John McCain and Sarah Palin in 2008.
+
+If they remained and the towns that voted for President Obama disappeared, then Trump definitely has a strong chance to win.
+
+
+```{r 2008_data}
+p2008 <- read.csv("data/2008presidential.csv")
+p2008$winner <- ifelse(p2008$McCain.Palin > p2008$Obama.Biden, "McCain and Palin", "Obama and Biden")
+
+```
+
+```{r 2008_results, fig.width=9, fig.height=6}
+
+p2008 <- subset(p2008, winner=="McCain and Palin")
+
+town_map <- p2008
+town_map <- town_map[c("Town", "McCain.Palin", "winner")]
+colnames(town_map) <- c("id", "McCain.Palin", "Winner")
+
+voters_map <- left_join(town_shape_df, town_map)
+voters_map <- subset(voters_map, !is.na(Winner))
+
+
+# plot map
+gg <- ggplot(voters_map, aes(long,lat, group=group, fill=Winner)) + 
+  geom_polygon() + 
+  geom_path(color = "white") +
+  coord_equal() 
+gg <- gg + labs(x=NULL, y=NULL, title="Towns where McCain and Palin won in 2008",
+                subtitle="During the Presidential general election.",
+                caption="SOURCE: Office of the Secretary of State\nAndrew Ba Tran/TrendCT.org")
+gg <- gg + theme_bw(base_family="Calibri")
+gg <- gg + theme(panel.background = element_rect(fill = "Sky Blue"))
+
+gg <- gg + theme(text = element_text(size=16))
+gg <- gg + theme(panel.grid.major=element_blank())
+gg <- gg + theme(panel.grid.minor=element_blank())
+gg <- gg + theme(panel.border=element_blank())
+gg <- gg + theme(axis.ticks=element_blank())
+gg <- gg + theme(axis.text.x=element_blank())
+gg <- gg + theme(axis.text.y=element_blank())
+
+gg <- gg + theme(plot.title=element_text(face="bold", family="Lato Black", size=22))
+gg <- gg + theme(plot.subtitle=element_text(face="italic", size=9, margin=margin(b=12)))
+gg <- gg + theme(plot.caption=element_text(size=12, margin=margin(t=10, r=80), color="#7a7d7e"))
+gg <- gg + theme(plot.margin = unit(c(1, 1, 1, 1), "lines"))
+
+gg
+
+```

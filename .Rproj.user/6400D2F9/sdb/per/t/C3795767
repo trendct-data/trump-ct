@@ -1,0 +1,28 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1469220146087.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "C3795767",
+    "lastKnownWriteTime" : 1469137175,
+    "last_content_update" : 1469220146087,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "uj0xbag429",
+        "caption" : "race_tracts",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=race_tracts&cache_key=uj0xbag429",
+        "displayedObservations" : 173,
+        "environment" : "",
+        "object" : "race_tracts",
+        "totalObservations" : 173,
+        "variables" : 7
+    },
+    "relative_order" : 15,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

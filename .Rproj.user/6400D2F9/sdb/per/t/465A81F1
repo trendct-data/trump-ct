@@ -1,0 +1,28 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1469130254367.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "465A81F1",
+    "lastKnownWriteTime" : 4344367104,
+    "last_content_update" : 1469130254367,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "dg7h44sspz",
+        "caption" : "clinton_trump",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=clinton_trump&cache_key=dg7h44sspz",
+        "displayedObservations" : 169,
+        "environment" : "",
+        "object" : "clinton_trump",
+        "totalObservations" : 169,
+        "variables" : 6
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
